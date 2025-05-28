@@ -1,8 +1,7 @@
 # CV Maker
 
-CV Maker is a modern web application that allows users to create, manage, and export professional resumes. Built with cutting-edge web technologies, it provides an intuitive interface for crafting polished CVs with ease.
+CV Maker is a modern web application that allows users to create and export CVs. 
 
----
 
 ## Tech Stack
 
