@@ -18,7 +18,7 @@ const Home: React.FC = () => {
                     Build Your Dev Resume
                 </h1>
                 <p className="text-gray-600 max-w-md text-base">
-                    Create, preview, and share your professional resume in one place — effortlessly.
+                    Preview and print your resume in one place — effortlessly.
                 </p>
                 <button
                     onClick={handleCreateCV}

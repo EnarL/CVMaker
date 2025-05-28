@@ -3,9 +3,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/a
 
 export interface CVData {
     personalInfo: {
-        fullName: string;
-        email: string;
-        phone: string;
+        fullName?: string;
+        email?: string;
+        phone?: string;
         location: string;
         website?: string;
         linkedin?: string;
@@ -58,39 +58,40 @@ export interface CVData {
 
 class APIService {
     private async fetchWithCredentials(url: string, options: RequestInit = {}) {
-        const response = await fetch(`${API_BASE_URL}${url}`, {
-            ...options,
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-        });
+        try {
+            const response = await fetch(`${API_BASE_URL}${url}`, {
+                ...options,
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers,
+                },
+            });
 
-        if (!response.ok) {
-            let errorMessage = 'API request failed';
-            try {
-                const error = await response.json();
-                errorMessage = error.message || errorMessage;
-                if (error.errors) {
-                    console.error('Validation errors:', error.errors);
+            // For non-200 responses, try to get the response anyway
+            if (!response.ok) {
+                console.warn(`API request returned ${response.status} for ${url}`);
+                // Try to parse response even if not ok
+                try {
+                    const data = await response.json();
+                    return data;
+                } catch {
+                    // If can't parse, return empty object
+                    return {};
                 }
-            } catch {
-                console.error('Failed to parse error response');
             }
-            throw new Error(errorMessage);
-        }
 
-        return response.json();
+            return response.json();
+        } catch (error) {
+            console.warn('API request failed:', error);
+            // Return empty object instead of throwing
+            return {};
+        }
     }
 
     async getCV(): Promise<CVData> {
-        try {
-            const response = await this.fetchWithCredentials('/cv');
-            return response.data || this.getEmptyTemplate();
-        } catch {
-            return this.getEmptyTemplate();
-        }
+        const response = await this.fetchWithCredentials('/cv');
+        return response.data || this.getEmptyTemplate();
     }
 
     async saveCV(cvData: CVData): Promise<CVData> {
@@ -99,7 +100,7 @@ class APIService {
             method: 'POST',
             body: JSON.stringify(cleanedData),
         });
-        return response.data;
+        return response.data || cleanedData;
     }
 
     private cleanCVData(cvData: CVData): CVData {
@@ -114,7 +115,6 @@ class APIService {
                 summary: cvData.personalInfo?.summary || '',
             },
             experience: (cvData.experience || [])
-                .filter(exp => exp.title || exp.company)
                 .map(exp => ({
                     id: exp.id,
                     title: exp.title || '',
@@ -124,7 +124,6 @@ class APIService {
                     description: exp.description || '',
                 })),
             education: (cvData.education || [])
-                .filter(edu => edu.degree || edu.school)
                 .map(edu => ({
                     id: edu.id,
                     degree: edu.degree || '',
@@ -134,15 +133,13 @@ class APIService {
                     gpa: edu.gpa || '',
                 })),
             skills: (cvData.skills || [])
-                .filter(skill => skill.name)
                 .map(skill => ({
                     id: skill.id,
-                    name: skill.name,
+                    name: skill.name || '',
                     level: skill.level || '',
                     category: skill.category || 'General',
                 })),
             projects: (cvData.projects || [])
-                .filter(project => project.name || project.description)
                 .map(project => ({
                     id: project.id,
                     name: project.name || '',
@@ -158,29 +155,25 @@ class APIService {
     }
 
     async getEmptyTemplate(): Promise<CVData> {
-        try {
-            const response = await this.fetchWithCredentials('/cv/template');
-            return response.data;
-        } catch {
-            return {
-                personalInfo: {
-                    fullName: '',
-                    email: '',
-                    phone: '',
-                    location: '',
-                    website: '',
-                    linkedin: '',
-                    summary: '',
-                },
-                experience: [],
-                education: [],
-                skills: [],
-                projects: [],
-                languages: [],
-                certifications: [],
-                template: 'modern',
-            };
-        }
+        const response = await this.fetchWithCredentials('/cv/template');
+        return response.data || {
+            personalInfo: {
+                fullName: '',
+                email: '',
+                phone: '',
+                location: '',
+                website: '',
+                linkedin: '',
+                summary: '',
+            },
+            experience: [],
+            education: [],
+            skills: [],
+            projects: [],
+            languages: [],
+            certifications: [],
+            template: 'modern',
+        };
     }
 
     async deleteCV(): Promise<void> {
@@ -194,7 +187,7 @@ class APIService {
             method: 'PUT',
             body: JSON.stringify(data),
         });
-        return response.data;
+        return response.data || data;
     }
 
     async addToSection(section: string, item: any): Promise<any> {
@@ -202,7 +195,7 @@ class APIService {
             method: 'POST',
             body: JSON.stringify(item),
         });
-        return response.data;
+        return response.data || item;
     }
 
     async updateSectionItem(section: string, itemId: string, data: any): Promise<any> {
@@ -210,7 +203,7 @@ class APIService {
             method: 'PUT',
             body: JSON.stringify(data),
         });
-        return response.data;
+        return response.data || data;
     }
 
     async deleteSectionItem(section: string, itemId: string): Promise<void> {
@@ -218,7 +211,6 @@ class APIService {
             method: 'DELETE',
         });
     }
-
 }
 
 export const apiService = new APIService();

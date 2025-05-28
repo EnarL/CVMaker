@@ -3,10 +3,10 @@ const redisService = require('./redisService');
 class CVService {
     // Create or update CV
     async saveCV(sessionId, cvData) {
-        // Validate and sanitize data
+        // Simple sanitization - just remove extreme values
         const sanitizedData = this.sanitizeCVData(cvData);
 
-        // Save to Redis
+        // Save to Redis (with fallback)
         await redisService.saveCV(sessionId, sanitizedData);
 
         return sanitizedData;
@@ -76,7 +76,7 @@ class CVService {
         return newItem;
     }
 
-    // Update item in array section - IMPROVED VERSION
+    // Update item in array section - SIMPLIFIED VERSION
     async updateSectionItem(sessionId, section, itemId, updatedData) {
         let cv = await redisService.getCV(sessionId);
 
@@ -91,9 +91,7 @@ class CVService {
         const itemIndex = cv[section].findIndex(item => item.id === itemId);
 
         if (itemIndex === -1) {
-            // Instead of throwing an error, create the item if it doesn't exist
-            console.log(`Item ${itemId} not found in ${section}, creating new item`);
-
+            // Create the item if it doesn't exist (no error throwing)
             const newItem = {
                 id: itemId,
                 ...updatedData,
@@ -122,62 +120,16 @@ class CVService {
         return cv[section][itemIndex];
     }
 
-    // ALTERNATIVE: Update or create item (upsert)
-    async upsertSectionItem(sessionId, section, itemId, updatedData) {
-        let cv = await redisService.getCV(sessionId);
-
-        if (!cv) {
-            cv = this.getEmptyCVTemplate();
-        }
-
-        if (!Array.isArray(cv[section])) {
-            cv[section] = [];
-        }
-
-        const itemIndex = cv[section].findIndex(item => item.id === itemId);
-
-        if (itemIndex === -1) {
-            // Create new item
-            const newItem = {
-                id: itemId,
-                ...updatedData,
-                createdAt: new Date().toISOString()
-            };
-            cv[section].push(newItem);
-        } else {
-            // Update existing item
-            cv[section][itemIndex] = {
-                ...cv[section][itemIndex],
-                ...updatedData,
-                id: itemId,
-                updatedAt: new Date().toISOString()
-            };
-        }
-
-        cv.lastUpdated = new Date().toISOString();
-        await redisService.saveCV(sessionId, cv);
-
-        return cv[section][itemIndex === -1 ? cv[section].length - 1 : itemIndex];
-    }
-
     // Remove item from array section
     async removeFromSection(sessionId, section, itemId) {
         let cv = await redisService.getCV(sessionId);
 
         if (!cv || !Array.isArray(cv[section])) {
             // Don't throw error, just return success
-            console.log(`Section ${section} not found or not array, nothing to remove`);
             return true;
         }
 
-        const originalLength = cv[section].length;
         cv[section] = cv[section].filter(item => item.id !== itemId);
-
-        if (cv[section].length === originalLength) {
-            console.log(`Item ${itemId} not found in ${section}, nothing to remove`);
-            return true; // Don't treat as error
-        }
-
         cv.lastUpdated = new Date().toISOString();
         await redisService.saveCV(sessionId, cv);
 
@@ -225,27 +177,29 @@ class CVService {
         };
     }
 
-    // Sanitize CV data
+    // Minimal sanitization - just ensure we don't have extremely large data
     sanitizeCVData(data) {
         const sanitized = { ...data };
 
-        // Sanitize strings
+        // Simple string sanitization
         const sanitizeString = (str) => {
             if (typeof str !== 'string') return str;
-            return str.trim().substring(0, 1000); // Limit length
+            return str.substring(0, 10000); // Just prevent extremely large strings
         };
 
         // Sanitize personal info
         if (sanitized.personalInfo) {
             Object.keys(sanitized.personalInfo).forEach(key => {
-                sanitized.personalInfo[key] = sanitizeString(sanitized.personalInfo[key]);
+                if (typeof sanitized.personalInfo[key] === 'string') {
+                    sanitized.personalInfo[key] = sanitizeString(sanitized.personalInfo[key]);
+                }
             });
         }
 
-        // Sanitize arrays
+        // Sanitize arrays - just limit size
         ['experience', 'education', 'skills', 'projects', 'languages', 'certifications'].forEach(section => {
             if (Array.isArray(sanitized[section])) {
-                sanitized[section] = sanitized[section].slice(0, 20); // Limit array size
+                sanitized[section] = sanitized[section].slice(0, 100); // Reasonable limit
                 sanitized[section].forEach(item => {
                     if (typeof item === 'object' && item !== null) {
                         Object.keys(item).forEach(key => {
@@ -261,13 +215,15 @@ class CVService {
         return sanitized;
     }
 
-    // Validate CV data
+    // Minimal validation - only check for basic issues
     validateCVData(data) {
         const errors = [];
 
-        // Don't require full name - allow empty CVs
-        if (data.personalInfo?.email && !this.isValidEmail(data.personalInfo.email)) {
-            errors.push('Valid email is required');
+        // Only validate email if it's provided and not empty
+        if (data.personalInfo?.email && data.personalInfo.email.trim() !== '') {
+            if (!this.isValidEmail(data.personalInfo.email)) {
+                errors.push('Valid email is required');
+            }
         }
 
         return errors;

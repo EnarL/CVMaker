@@ -1,7 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
 const handlebars = require('handlebars');
-const pdfGenerator = require('../utils/pdfGenerator');
 
 class ExportService {
     constructor() {
@@ -498,11 +497,6 @@ class ExportService {
     </div>
     {{/if}}
         `;
-    }
-
-    // Close browser when service shuts down
-    async cleanup() {
-        await pdfGenerator.closeBrowser();
     }
 }
 

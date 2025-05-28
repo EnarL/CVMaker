@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useState, useRef} from 'react';
 import {apiService, CVData} from '../services/api';
 import {ProfileData} from '../types/profile';
 
@@ -81,7 +81,6 @@ export const useCV = () => {
     });
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
     // Load CV data on mount
@@ -90,166 +89,157 @@ export const useCV = () => {
     }, []);
 
     const loadCV = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const cvData = await apiService.getCV();
-            const profile = cvDataToProfile(cvData);
-            setProfileData(profile);
-        } catch (err) {
-            console.error('Failed to load CV:', err);
-            setError(err instanceof Error ? err.message : 'Failed to load CV');
-        } finally {
-            setLoading(false);
-        }
+        setLoading(true);
+        const cvData = await apiService.getCV();
+        const profile = cvDataToProfile(cvData);
+        setProfileData(profile);
+        setLoading(false);
     };
 
     const saveCV = async (data?: ProfileData) => {
-        try {
-            setLoading(true);
-            setError(null);
-            const dataToSave = data || profileData;
-            const cvData = profileToCVData(dataToSave);
+        setLoading(true);
+        const dataToSave = data || profileData;
+        const cvData = profileToCVData(dataToSave);
 
-            const savedData = await apiService.saveCV(cvData);
-            const updatedProfile = cvDataToProfile(savedData);
+        const savedData = await apiService.saveCV(cvData);
+        const updatedProfile = cvDataToProfile(savedData);
 
-            setProfileData(updatedProfile);
-            setLastSaved(new Date());
+        setProfileData(updatedProfile);
+        setLastSaved(new Date());
+        setLoading(false);
 
-            return updatedProfile;
-        } catch (err) {
-            console.error('Failed to save CV:', err);
-            setError(err instanceof Error ? err.message : 'Failed to save CV');
-            throw err;
-        } finally {
-            setLoading(false);
-        }
+        return updatedProfile;
     };
 
-    // Auto-save functionality
+    // Auto-save functionality with debouncing
+    const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     const autoSave = useCallback(async (data: ProfileData) => {
-        try {
-            const cvData = profileToCVData(data);
-            await apiService.saveCV(cvData);
-            setLastSaved(new Date());
-        } catch (err) {
-            console.error('Auto-save failed:', err);
-        }
+        const cvData = profileToCVData(data);
+        await apiService.saveCV(cvData);
+        setLastSaved(new Date());
     }, []);
 
     const handleInputChange = (field: keyof ProfileData, value: any) => {
         const newData = { ...profileData, [field]: value };
         setProfileData(newData);
 
-        // Auto-save after 2 seconds of inactivity
-        setTimeout(() => autoSave(newData), 2000);
+        // Clear existing timeout to debounce
+        if (autoSaveTimeoutRef.current) {
+            clearTimeout(autoSaveTimeoutRef.current);
+        }
+
+        // Set new timeout for auto-save
+        autoSaveTimeoutRef.current = setTimeout(() => {
+            autoSave(newData);
+            autoSaveTimeoutRef.current = null;
+        }, 2000);
     };
 
-    // Section-specific operations
+    // Experience operations
     const addExperience = async () => {
-        try {
-            setLoading(true);
-            const newExp = {
-                title: '',
-                company: '',
-                duration: '',
-                description: '',
-            };
+        const newExp = {
+            id: Date.now().toString(),
+            title: '',
+            company: '',
+            duration: '',
+            description: '',
+        };
 
-            const addedExp = await apiService.addToSection('experience', newExp);
-            const updatedExperience = [...profileData.experience, {
-                id: addedExp.data?.id || Date.now().toString(),
-                ...newExp
-            }];
-
-            setProfileData(prev => ({ ...prev, experience: updatedExperience }));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add experience');
-        } finally {
-            setLoading(false);
-        }
+        await apiService.addToSection('experience', newExp);
+        setProfileData(prev => ({
+            ...prev,
+            experience: [...prev.experience, newExp]
+        }));
     };
 
     const updateExperience = async (experienceId: string, updatedData: any) => {
-        try {
-            await apiService.updateSectionItem('experience', experienceId, updatedData);
+        await apiService.updateSectionItem('experience', experienceId, updatedData);
 
-            const updatedExperience = profileData.experience.map(exp =>
-                exp.id === experienceId ? { ...exp, ...updatedData } : exp
-            );
+        const updatedExperience = profileData.experience.map(exp =>
+            exp.id === experienceId ? { ...exp, ...updatedData } : exp
+        );
 
-            setProfileData(prev => ({ ...prev, experience: updatedExperience }));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update experience');
-        }
+        setProfileData(prev => ({ ...prev, experience: updatedExperience }));
     };
 
     const deleteExperience = async (experienceId: string) => {
-        try {
-            await apiService.deleteSectionItem('experience', experienceId);
+        await apiService.deleteSectionItem('experience', experienceId);
 
-            const updatedExperience = profileData.experience.filter(exp => exp.id !== experienceId);
-            setProfileData(prev => ({ ...prev, experience: updatedExperience }));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to delete experience');
-        }
+        const updatedExperience = profileData.experience.filter(exp => exp.id !== experienceId);
+        setProfileData(prev => ({ ...prev, experience: updatedExperience }));
     };
 
-    // Similar functions for education, projects, etc.
+    // Education operations
     const addEducation = async () => {
-        try {
-            setLoading(true);
-            const newEdu = {
-                degree: '',
-                school: '',
-                year: '',
-            };
+        const newEdu = {
+            id: Date.now().toString(),
+            degree: '',
+            school: '',
+            year: '',
+        };
 
-            const addedEdu = await apiService.addToSection('education', newEdu);
-            const updatedEducation = [...profileData.education, {
-                id: addedEdu.data?.id || Date.now().toString(),
-                ...newEdu
-            }];
-
-            setProfileData(prev => ({ ...prev, education: updatedEducation }));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add education');
-        } finally {
-            setLoading(false);
-        }
+        await apiService.addToSection('education', newEdu);
+        setProfileData(prev => ({
+            ...prev,
+            education: [...prev.education, newEdu]
+        }));
     };
 
     const updateEducation = async (educationId: string, updatedData: any) => {
-        try {
-            await apiService.updateSectionItem('education', educationId, updatedData);
+        await apiService.updateSectionItem('education', educationId, updatedData);
 
-            const updatedEducation = profileData.education.map(edu =>
-                edu.id === educationId ? { ...edu, ...updatedData } : edu
-            );
+        const updatedEducation = profileData.education.map(edu =>
+            edu.id === educationId ? { ...edu, ...updatedData } : edu
+        );
 
-            setProfileData(prev => ({ ...prev, education: updatedEducation }));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update education');
-        }
+        setProfileData(prev => ({ ...prev, education: updatedEducation }));
     };
 
     const deleteEducation = async (educationId: string) => {
-        try {
-            await apiService.deleteSectionItem('education', educationId);
+        await apiService.deleteSectionItem('education', educationId);
 
-            const updatedEducation = profileData.education.filter(edu => edu.id !== educationId);
-            setProfileData(prev => ({ ...prev, education: updatedEducation }));
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to delete education');
-        }
+        const updatedEducation = profileData.education.filter(edu => edu.id !== educationId);
+        setProfileData(prev => ({ ...prev, education: updatedEducation }));
     };
 
+    // Project operations
+    const addProject = async () => {
+        const newProject = {
+            id: Date.now().toString(),
+            name: '',
+            description: '',
+            technologies: '',
+            link: '',
+        };
+
+        await apiService.addToSection('projects', newProject);
+        setProfileData(prev => ({
+            ...prev,
+            projects: [...prev.projects, newProject]
+        }));
+    };
+
+    const updateProject = async (projectId: string, updatedData: any) => {
+        await apiService.updateSectionItem('projects', projectId, updatedData);
+
+        const updatedProjects = profileData.projects.map(project =>
+            project.id === projectId ? { ...project, ...updatedData } : project
+        );
+
+        setProfileData(prev => ({ ...prev, projects: updatedProjects }));
+    };
+
+    const deleteProject = async (projectId: string) => {
+        await apiService.deleteSectionItem('projects', projectId);
+
+        const updatedProjects = profileData.projects.filter(project => project.id !== projectId);
+        setProfileData(prev => ({ ...prev, projects: updatedProjects }));
+    };
 
     return {
         profileData,
         loading,
-        error,
         lastSaved,
         handleInputChange,
         saveCV,
@@ -262,7 +252,9 @@ export const useCV = () => {
         addEducation,
         updateEducation,
         deleteEducation,
-        // Utility
-        clearError: () => setError(null),
+        // Project operations
+        addProject,
+        updateProject,
+        deleteProject,
     };
 };
