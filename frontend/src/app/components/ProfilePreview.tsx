@@ -8,166 +8,203 @@ interface ProfilePreviewProps {
 }
 
 const ProfilePreview: React.FC<ProfilePreviewProps> = ({ profileData, onBack }) => {
+    const contactInfo = [profileData.phone, profileData.email, profileData.location]
+        .filter(Boolean)
+        .join(' | ');
+
+    const hasContent = (items: any[], fields: string[]) =>
+        items.some(item => fields.some(field => item[field]));
+
     return (
         <div className="min-h-screen bg-gray-100">
-            {/* Navigation Bar */}
-            <div className="bg-white border-b border-gray-200">
-                <div className="max-w-5xl mx-auto px-8 py-4">
-                    <div className="flex justify-between items-center">
-                        <button
-                            onClick={onBack}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 hover:border-gray-400 hover:text-gray-900 transition-colors duration-200 flex items-center"
-                        >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                            </svg>
-                            Back to Editor
-                        </button>
-
-                        <div className="flex items-center space-x-3">
-                            <button className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 hover:border-gray-400 hover:text-gray-900 transition-colors duration-200">
-                                Download PDF
-                            </button>
-                            <button className="px-4 py-2 bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors duration-200">
-                                Print
-                            </button>
-                        </div>
-                    </div>
+            {/* Navigation */}
+            <nav className="bg-white border-b border-gray-200 print:hidden">
+                <div className="max-w-5xl mx-auto px-24 py-4 flex justify-between items-center">
+                    <button
+                        onClick={onBack}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 hover:border-gray-400 hover:text-gray-900 transition-colors flex items-center"
+                    >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Back to Editor
+                    </button>
+                    <button
+                        onClick={() => window.print()}
+                        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+                    >
+                        Print
+                    </button>
                 </div>
-            </div>
+            </nav>
 
-            {/* Document Container */}
-            <div className="py-12">
-                <div className="max-w-4xl mx-auto">
-                    {/* Paper Sheet */}
-                    <div className="bg-white border border-gray-200 mx-8" style={{ aspectRatio: '8.5/11', minHeight: '800px' }}>
-                        <div className="p-16 h-full">
+            {/* Document */}
+            <div className="py-12 print:py-0">
+                <div className="max-w-4xl mx-auto print:max-w-none">
+                    <div className="bg-white border border-gray-200 mx-8 print:border-0 print:mx-0 print:shadow-none"
+                         style={{ aspectRatio: '8.5/11', minHeight: '800px' }}>
+                        <div className="p-12 print:p-8 text-sm font-serif">
+
                             {/* Header */}
-                            <div className="text-center mb-12 pb-8 border-b border-gray-900">
-                                <h1 className="text-2xl font-light text-gray-900 mb-4 tracking-wide">
+                            <header className="text-center mb-8">
+                                <h1 className="text-2xl font-bold text-gray-900 mb-2 uppercase tracking-wider">
                                     {profileData.fullName || 'Your Name'}
                                 </h1>
+                                {contactInfo && (
+                                    <div className="text-sm text-gray-700">{contactInfo}</div>
+                                )}
+                            </header>
 
-                                <div className="flex justify-center items-center space-x-6 text-sm text-gray-700 mb-6">
-                                    {profileData.email && <span>{profileData.email}</span>}
-                                    {profileData.phone && <span>{profileData.phone}</span>}
-                                    {profileData.location && <span>{profileData.location}</span>}
-                                </div>
-
-                                {profileData.bio && (
-                                    <p className="text-gray-700 max-w-2xl mx-auto leading-relaxed text-sm">
+                            {profileData.bio && (
+                                <section className="mb-6">
+                                    <p className="text-sm text-gray-700 leading-relaxed text-justify">
                                         {profileData.bio}
                                     </p>
-                                )}
-                            </div>
-
-                            {/* Skills */}
-                            {profileData.skills.length > 0 && (
-                                <div className="mb-8">
-                                    <h2 className="text-sm font-medium text-gray-900 mb-3 uppercase tracking-wider">
-                                        Skills
-                                    </h2>
-                                    <div className="text-sm text-gray-700 leading-relaxed">
-                                        {profileData.skills.join(' • ')}
+                                </section>
+                            )}
+                            {hasContent(profileData.education, ['degree', 'school']) && (
+                                <section className="mb-6">
+                                    <h2 className="section-title">EDUCATION</h2>
+                                    <div className="space-y-3">
+                                        {profileData.education
+                                            .filter(edu => edu.degree || edu.school)
+                                            .map(edu => (
+                                                <div key={edu.id} className="flex justify-between items-start">
+                                                    <div>
+                                                        <div className="font-bold text-sm text-gray-900">
+                                                            {edu.school || 'Institution Name'}
+                                                        </div>
+                                                        <div className="italic text-sm text-gray-700">
+                                                            {edu.degree || 'Degree/Certificate'}
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-sm text-gray-700 italic">
+                                                        {edu.year}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        }
                                     </div>
-                                </div>
+                                </section>
                             )}
 
                             {/* Experience */}
-                            {profileData.experience.some(exp => exp.title || exp.company) && (
-                                <div className="mb-8">
-                                    <h2 className="text-sm font-medium text-gray-900 mb-4 uppercase tracking-wider">
-                                        Experience
-                                    </h2>
-                                    <div className="space-y-5">
-                                        {profileData.experience.filter(exp => exp.title || exp.company).map((exp) => (
-                                            <div key={exp.id}>
-                                                <div className="flex justify-between items-baseline mb-1">
-                                                    <h3 className="font-medium text-gray-900 text-sm">
-                                                        {exp.title || 'Position Title'}
-                                                    </h3>
-                                                    <span className="text-xs text-gray-600">
-                                                        {exp.duration}
-                                                    </span>
+                            {hasContent(profileData.experience, ['title', 'company']) && (
+                                <section className="mb-6">
+                                    <h2 className="section-title">Experience</h2>
+                                    <div className="space-y-4">
+                                        {profileData.experience
+                                            .filter(exp => exp.title || exp.company)
+                                            .map(exp => (
+                                                <div key={exp.id}>
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <div>
+                                                            <div className="font-bold text-sm text-gray-900">
+                                                                {exp.title || 'Position Title'}
+                                                            </div>
+                                                            <div className="italic text-sm text-gray-700">
+                                                                {exp.company || 'Company Name'}
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-sm text-gray-700 italic">
+                                                            {exp.duration}
+                                                        </div>
+                                                    </div>
+                                                    {exp.description && (
+                                                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 leading-relaxed ml-4 mt-2">
+                                                            {exp.description
+                                                                .split('\n')
+                                                                .filter(line => line.trim())
+                                                                .map((line, index) => (
+                                                                    <li key={index} className="pl-1">
+                                                                        {line.trim()}
+                                                                    </li>
+                                                                ))
+                                                            }
+                                                        </ul>
+                                                    )}
                                                 </div>
-                                                <p className="text-sm text-gray-600 mb-2">
-                                                    {exp.company || 'Company Name'}
-                                                </p>
-                                                {exp.description && (
-                                                    <p className="text-xs text-gray-700 leading-relaxed">
-                                                        {exp.description}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        ))}
+                                            ))
+                                        }
                                     </div>
-                                </div>
+                                </section>
                             )}
 
                             {/* Projects */}
-                            {profileData.projects.some(project => project.name || project.description) && (
-                                <div className="mb-8">
-                                    <h2 className="text-sm font-medium text-gray-900 mb-4 uppercase tracking-wider">
-                                        Projects
-                                    </h2>
+                            {hasContent(profileData.projects, ['name', 'description']) && (
+                                <section className="mb-6">
+                                    <h2 className="section-title">Projects</h2>
                                     <div className="space-y-4">
-                                        {profileData.projects.filter(project => project.name || project.description).map((project) => (
-                                            <div key={project.id}>
-                                                <div className="flex items-baseline mb-1">
-                                                    <h3 className="font-medium text-gray-900 text-sm">
-                                                        {project.name || 'Project Name'}
-                                                    </h3>
-                                                    {project.link && (
-                                                        <span className="text-xs text-gray-500 ml-2">
-                                                            {project.link}
-                                                        </span>
+                                        {profileData.projects
+                                            .filter(project => project.name || project.description)
+                                            .map(project => (
+                                                <div key={project.id}>
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <div className="font-bold text-sm text-gray-900">
+                                                            {project.name || 'Project Name'}
+                                                            {project.technologies && (
+                                                                <span className="font-normal text-gray-700">
+                                                                    {' | '}<em>{project.technologies}</em>
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {project.link && (
+                                                            <div className="text-xs text-gray-700 italic">
+                                                                {project.link}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    {project.description && (
+                                                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 leading-relaxed ml-4 mt-2">
+                                                            {project.description
+                                                                .split('\n')
+                                                                .filter(line => line.trim())
+                                                                .map((line, index) => (
+                                                                    <li key={index} className="pl-1">
+                                                                        {line.trim()}
+                                                                    </li>
+                                                                ))
+                                                            }
+                                                        </ul>
                                                     )}
                                                 </div>
-                                                {project.technologies && (
-                                                    <p className="text-xs text-gray-600 mb-1">
-                                                        {project.technologies}
-                                                    </p>
-                                                )}
-                                                {project.description && (
-                                                    <p className="text-xs text-gray-700 leading-relaxed">
-                                                        {project.description}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        ))}
+                                            ))
+                                        }
                                     </div>
-                                </div>
+                                </section>
                             )}
 
-                            {/* Education */}
-                            {profileData.education.some(edu => edu.degree || edu.school) && (
-                                <div className="mb-8">
-                                    <h2 className="text-sm font-medium text-gray-900 mb-4 uppercase tracking-wider">
-                                        Education
-                                    </h2>
-                                    <div className="space-y-3">
-                                        {profileData.education.filter(edu => edu.degree || edu.school).map((edu) => (
-                                            <div key={edu.id} className="flex justify-between items-baseline">
-                                                <div>
-                                                    <h3 className="font-medium text-gray-900 text-sm">
-                                                        {edu.degree || 'Degree/Certificate'}
-                                                    </h3>
-                                                    <p className="text-sm text-gray-600">
-                                                        {edu.school || 'Institution Name'}
-                                                    </p>
-                                                </div>
-                                                <span className="text-xs text-gray-600">
-                                                    {edu.year}
-                                                </span>
-                                            </div>
-                                        ))}
+                            {/* Skills */}
+                            {profileData.skills && profileData.skills.length > 0 && (
+                                <section className="mb-6">
+                                    <h2 className="section-title">Technical Skills</h2>
+                                    <div className="text-sm text-gray-700">
+                                        {profileData.skills.join(', ')}
                                     </div>
-                                </div>
+                                </section>
                             )}
+
                         </div>
                     </div>
                 </div>
             </div>
+
+            <style jsx>{`
+                .section-title {
+                    @apply text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider border-b border-gray-900 pb-1;
+                }
+                
+                @media print {
+                    .print\\:hidden { display: none !important; }
+                    .print\\:py-0 { padding-top: 0 !important; padding-bottom: 0 !important; }
+                    .print\\:border-0 { border: 0 !important; }
+                    .print\\:mx-0 { margin-left: 0 !important; margin-right: 0 !important; }
+                    .print\\:max-w-none { max-width: none !important; }
+                    .print\\:p-8 { padding: 2rem !important; }
+                    .print\\:shadow-none { box-shadow: none !important; }
+                    @page { margin: 0.5in; }
+                }
+            `}</style>
         </div>
     );
 };
