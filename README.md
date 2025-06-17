@@ -24,11 +24,10 @@ CV Maker is a modern web application that allows users to create and export CVs 
 
 ---
 
-## 🛠️ How to run the program
+## How to Run This Project
 
 **Note**: There is currently no working deployment link available. I have made the program runnable via Docker.
 
-## How to Run This Project
 
 I have added example .env files, to use these .env files rename the .env.example to .env in frontend and backend directory.
 
