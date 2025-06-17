@@ -1,6 +1,6 @@
 # CV Maker
 
-CV Maker is a modern web application that allows users to create and export CVs in PDF format. When opening the program redis creates a sessionId for that specific user which is used to save the input data and restore it after a refresh. The session expires in 24 hours.
+CV Maker is a modern web application that allows users to create and export CVs in PDF format. When opening the program redis creates a sessionId for that specific user which is used to save the input data and restore it after a page refresh. The session expires in 24 hours.
 
 #### Currently it only supports one format of CV, which is: Personal Information, Education, Work Experience, Projects and Skills. Future improvements could include support for customizable formats, as well as separate templates for color schemes and text size configuration.
 
