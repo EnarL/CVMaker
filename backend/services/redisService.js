@@ -10,13 +10,13 @@ class RedisService {
 
     async connect() {
         try {
-            const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+            const redisHost = process.env.REDIS_HOST || 'localhost';
+            const redisPort = process.env.REDIS_PORT || 6379;
 
             this.client = redis.createClient({
-                url: redisUrl,
-                retry_unfulfilled_commands: true,
-                retry_delay_on_failover: 100,
                 socket: {
+                    host: redisHost,
+                    port: redisPort,
                     reconnectStrategy: (retries) => {
                         if (retries > 10) {
                             console.warn('Redis connection failed after 10 retries, using fallback storage');
@@ -50,7 +50,6 @@ class RedisService {
             return false;
         }
     }
-
     async disconnect() {
         if (this.client) {
             try {

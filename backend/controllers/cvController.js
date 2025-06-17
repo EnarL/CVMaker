@@ -1,5 +1,4 @@
 const cvService = require('../services/cvService');
-const { validationResult } = require('express-validator');
 
 class CVController {
     async getCV(req, res) {
@@ -12,7 +11,6 @@ class CVController {
             });
         } catch (error) {
             console.error('Get CV error:', error);
-            // Return empty template on error instead of failing
             const template = cvService.getEmptyCVTemplate();
             res.json({
                 success: true,
@@ -23,7 +21,6 @@ class CVController {
 
     async saveCV(req, res) {
         try {
-            // Skip complex validation - just save the data
             const cv = await cvService.saveCV(req.sessionId, req.body);
 
             res.json({
@@ -33,7 +30,6 @@ class CVController {
             });
         } catch (error) {
             console.error('Save CV error:', error);
-            // Don't fail completely - return the data they sent
             res.json({
                 success: true,
                 message: 'CV saved (with fallback)',
@@ -106,7 +102,6 @@ class CVController {
             });
         } catch (error) {
             console.error('Update section item error:', error);
-            // Return the updated data with the ID
             const fallbackItem = {
                 id: req.params.itemId,
                 ...req.body,
@@ -132,7 +127,6 @@ class CVController {
             });
         } catch (error) {
             console.error('Remove from section error:', error);
-            // Always return success for deletion
             res.json({
                 success: true,
                 message: 'Item removed (with fallback)'

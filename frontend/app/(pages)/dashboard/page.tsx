@@ -115,11 +115,15 @@ const Dashboard: React.FC = () => {
                                 profileData={profileData}
                                 onInputChange={handleInputChange}
                             />
-
-                            <SkillsForm
+                            <EducationForm
                                 profileData={profileData}
                                 onInputChange={handleInputChange}
+                                onAddEducation={addEducation}
+                                onUpdateEducation={updateEducation}
+                                onDeleteEducation={deleteEducation}
+                                loading={loading}
                             />
+
 
                             <ExperienceForm
                                 profileData={profileData}
@@ -129,19 +133,14 @@ const Dashboard: React.FC = () => {
                                 onDeleteExperience={deleteExperience}
                                 loading={loading}
                             />
-
                             <ProjectsForm
                                 profileData={profileData}
                                 onInputChange={handleInputChange}
                             />
 
-                            <EducationForm
+                            <SkillsForm
                                 profileData={profileData}
                                 onInputChange={handleInputChange}
-                                onAddEducation={addEducation}
-                                onUpdateEducation={updateEducation}
-                                onDeleteEducation={deleteEducation}
-                                loading={loading}
                             />
                         </div>
                     </div>

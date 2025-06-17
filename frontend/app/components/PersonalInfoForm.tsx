@@ -64,14 +64,23 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ profileData, onInpu
                         value={profileData.phone}
                         onChange={(value) => onInputChange('phone', value)}
                     />
-                </div>
 
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                     label="Location"
-                    placeholder="New York, NY"
+                    placeholder="Tallinn, Estonia"
                     value={profileData.location}
                     onChange={(value) => onInputChange('location', value)}
                 />
+                <FormField
+                        label="LinkedIn"
+                        type="linkedIn"
+                        placeholder="https://www.linkedin.com/in/example/"
+                        value={profileData.linkedIn}
+                        onChange={(value) => onInputChange('linkedIn', value)}
+                />
+                </div>
 
                 <FormField
                     label="Professional Bio"

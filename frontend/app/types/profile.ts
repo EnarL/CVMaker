@@ -3,6 +3,7 @@ export interface ProfileData {
     email: string;
     phone: string;
     location: string;
+    linkedIn: string;
     bio: string;
     skills: string[];
     experience: Array<{

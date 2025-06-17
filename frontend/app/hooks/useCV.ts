@@ -38,7 +38,7 @@ const profileToCVData = (profile: ProfileData): CVData => ({
     template: 'modern',
 });
 
-const cvDataToProfile = (cvData: CVData): ProfileData => ({
+const cvDataToProfile = (cvData: CVData): ProfileData => <ProfileData>({
     fullName: cvData.personalInfo?.fullName || '',
     email: cvData.personalInfo?.email || '',
     phone: cvData.personalInfo?.phone || '',
@@ -51,24 +51,25 @@ const cvDataToProfile = (cvData: CVData): ProfileData => ({
         company: exp.company || '',
         duration: exp.duration || '',
         description: exp.description || '',
-    })) || [{ id: '1', title: '', company: '', duration: '', description: '' }],
+    })) || [{id: '1', title: '', company: '', duration: '', description: ''}],
     projects: cvData.projects?.map(project => ({
         id: project.id || Date.now().toString(),
         name: project.name || '',
         description: project.description || '',
         technologies: project.technologies || '',
         link: project.link || '',
-    })) || [{ id: '1', name: '', description: '', technologies: '', link: '' }],
+    })) || [{id: '1', name: '', description: '', technologies: '', link: ''}],
     education: cvData.education?.map(edu => ({
         id: edu.id || Date.now().toString(),
         degree: edu.degree || '',
         school: edu.school || '',
         year: edu.year || '',
-    })) || [{ id: '1', degree: '', school: '', year: '' }],
+    })) || [{id: '1', degree: '', school: '', year: ''}],
 });
 
 export const useCV = () => {
     const [profileData, setProfileData] = useState<ProfileData>({
+        linkedIn: "",
         fullName: '',
         email: '',
         phone: '',

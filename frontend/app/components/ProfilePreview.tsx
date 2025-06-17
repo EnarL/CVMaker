@@ -17,7 +17,6 @@ const ProfilePreview: React.FC<ProfilePreviewProps> = ({ profileData, onBack }) 
 
     return (
         <div className="min-h-screen bg-gray-100">
-            {/* Navigation */}
             <nav className="bg-white border-b border-gray-200 print:hidden">
                 <div className="max-w-5xl mx-auto px-24 py-4 flex justify-between items-center">
                     <button
